@@ -77,5 +77,58 @@ router.delete("/:id", (req, res) => {
     data: users,
   });
 });
+router.get("/subscription/details/:id", (req, res) => {
+  const { id } = req.params;
+
+  const user = users.find((each) => each.id === id && each.subscriptionDate);
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: "user not found with subscription",
+    });
+  }
+  const dateindays = (data = "") => {
+    let date;
+    if (data === "") {
+      date = new Date();
+    } else {
+      date = new Date(data);
+    }
+    let days = Math.floor(date / (1000 * 60 * 60 * 24));
+    return days;
+  };
+  const subscriptiontype = (date) => {
+    if (user.subscriptionType === "Basic") {
+      date = date + 90;
+    } else if (user.subscriptionType === "Standard") {
+      date = date + 180;
+    } else {
+      date = date + 365;
+    }
+    return date;
+  };
+  let returndate = dateindays(user.returnDate);
+  let currentdate = dateindays();
+  let subscriptiondate = dateindays(user.subscriptionDate);
+  let subscriptionexpire = subscriptiontype(subscriptiondate);
+
+  
+  const data = {
+    ...user,
+    subscriptionExpired: subscriptionexpire < currentdate,
+    Daysleft:
+      subscriptionexpire <= currentdate ? 0 : subscriptionexpire - currentdate,
+    fine:
+      returndate < currentdate
+        ? subscriptionexpire <= currentdate
+          ? 200
+          : 100
+        : 0,
+  };
+  res.status(200).json({
+    success: true,
+    data,
+  });
+});
 
 module.exports = router;
