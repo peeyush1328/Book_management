@@ -87,6 +87,48 @@ router.get("/issuedbook/byuser", (req, res) => {
   });
 });
 
+router.get("/issuedbooks/fine", (req, res) => {
+  const user = users.filter((each) => {
+    if (each.issuedBook) return each;
+  });
+  console.log(user);
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: "not found issued book",
+    });
+  }
 
+  const issuedbookwithfine = [];
+
+  const dateindays = (data = "") => {
+    let date;
+    if (data === "") {
+      date = new Date();
+    } else {
+      date = new Date(data);
+    }
+    let days = Math.floor(date / (1000 * 60 * 60 * 24));
+    return days;
+  };
+  user.map((each) => {
+    const booke = books.find((book) => {
+      if (book.id === each.issuedBook) {
+        let currentdate = dateindays();
+        let returndate = dateindays(each.returnDate);
+        if (returndate <= currentdate) {
+          issuedbookwithfine.push(book);
+        }
+      }
+    });
+  });
+  if (issuedbookwithfine.length === 0) {
+    return res.status(404).json({ success: false, message: "no book found" });
+  }
+  res.status(200).json({
+    success: true,
+    data: issuedbookwithfine,
+  });
+});
 
 module.exports = router;
